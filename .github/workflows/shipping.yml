@@ -1,0 +1,27 @@
+name: shipping
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "shipping/**"
+      - ".github/workflows/shipping.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: shipping/go.mod
+          cache-dependency-path: shipping/go.sum
+
+      - name: 테스트
+        working-directory: shipping
+        run: go test ./...
+
+      - name: 이미지 빌드
+        run: docker build -t shipping:test shipping
