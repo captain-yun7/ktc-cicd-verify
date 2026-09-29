@@ -21,3 +21,4 @@ Online Boutique의 서비스 두 개(`shipping`, `frontend`)와 배포 매니페
 - 실습: 홍길동
 - 질문: Discord
 ## 소개
+- 웹에서 고친 줄
