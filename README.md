@@ -19,3 +19,4 @@ Online Boutique의 서비스 두 개(`shipping`, `frontend`)와 배포 매니페
 ## 출처
 서비스 코드와 매니페스트는 [GoogleCloudPlatform/microservices-demo](https://github.com/GoogleCloudPlatform/microservices-demo) v0.10.7 (Apache License 2.0, `LICENSE`)에서 가져왔습니다.
 - 실습: 홍길동
+- 질문: Discord
