@@ -5,42 +5,81 @@ on:
     branches: [main]
     paths:
       - "shipping/**"
+      - "deploy/base/**"
       - ".github/workflows/shipping.yml"
+  pull_request:
+    paths:
+      - "shipping/**"
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write          # GHCR에 올리려면 필요
+  packages: write
+
+env:
+  SERVICE: shipping
+  K8S_NAME: shippingservice        # deploy/base 의 이미지 이름 (실습 7에서 씀)
+  TRIVY_VERSION: v0.74.0
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
-          go-version-file: shipping/go.mod
-          cache-dependency-path: shipping/go.sum
-
-      - name: 테스트
-        working-directory: shipping
+          go-version-file: ${{ env.SERVICE }}/go.mod
+          cache-dependency-path: ${{ env.SERVICE }}/go.sum
+      - name: 단위 테스트
+        working-directory: ${{ env.SERVICE }}
         run: go test ./...
 
+  verify:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+
+      - name: 이미지 빌드 (검사용, amd64 한 가지)
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.SERVICE }}
+          load: true
+          tags: ${{ env.SERVICE }}:ci
+          cache-from: type=gha,scope=${{ env.SERVICE }}
+          cache-to: type=gha,scope=${{ env.SERVICE }},mode=max
+
+      # 외부 Action은 태그 대신 커밋 SHA로 고정한다 (태그는 바꿔 달 수 있다 — 클라우드 보안 14장 공급망)
+      - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          cache: true
+
+      - name: Trivy 게이트 (고칠 수 있는 CRITICAL이 있으면 실패)
+        run: trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ${{ env.SERVICE }}:ci
+
+  push:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
       - name: 이미지 이름 (GHCR는 소문자만)
         id: img
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/shipping" >> "$GITHUB_OUTPUT"
-
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${{ env.SERVICE }}" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v7
+      - name: 빌드·올리기
+        uses: docker/build-push-action@v7
         with:
-          context: shipping
+          context: ${{ env.SERVICE }}
           push: true
           tags: |
             ${{ steps.img.outputs.name }}:${{ github.sha }}
             ${{ steps.img.outputs.name }}:main
+          cache-from: type=gha,scope=${{ env.SERVICE }}
