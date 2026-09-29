@@ -22,3 +22,4 @@ Online Boutique의 서비스 두 개(`shipping`, `frontend`)와 배포 매니페
 - 질문: Discord
 ## 소개
 - 웹에서 고친 줄
+- VM에서 고친 줄
