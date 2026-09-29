@@ -1,4 +1,4 @@
-# CI/CD 실습 저장소 (kt cloud TECH UP)
+# CI/CD 실습 저장소 (홍길동)
 
 Online Boutique의 서비스 두 개(`shipping`, `frontend`)와 배포 매니페스트(`deploy/`)가 들어 있습니다. CI/CD 과목 내내 이 저장소 하나로 GitHub Actions, Jenkins, Argo CD를 차례로 붙입니다.
 
