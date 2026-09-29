@@ -1,0 +1,10 @@
+# Online Boutique 축소판: 홈·장바구니에 필요한 6개 서비스
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- frontend.yaml
+- shipping.yaml
+- productcatalog.yaml
+- currency.yaml
+- cart.yaml
+# 이미지 주소·태그는 overlays/<환경>에서 정한다 (base에서 바꾸면 overlay의 set image가 맞는 대상을 못 찾는다)
