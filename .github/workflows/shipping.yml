@@ -74,10 +74,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: 빌드·올리기
+      - name: arm64 이미지 안의 실행 파일이 정말 arm64인지 확인
+        run: |
+          docker buildx build --platform linux/arm64 -o type=local,dest=arm64-out ${{ env.SERVICE }}
+          file arm64-out/src/* | tee /dev/stderr | grep -q "ARM aarch64"
+      - name: 멀티아치 빌드·올리기 (amd64 + arm64)
         uses: docker/build-push-action@v7
         with:
           context: ${{ env.SERVICE }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ steps.img.outputs.name }}:${{ github.sha }}
