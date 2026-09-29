@@ -59,6 +59,38 @@ jobs:
       - name: Trivy 게이트 (고칠 수 있는 CRITICAL이 있으면 실패)
         run: trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ${{ env.SERVICE }}:ci
 
+
+      - name: kind 클러스터
+        uses: helm/kind-action@v1
+        with:
+          version: v0.33.0
+          cluster_name: ci
+
+      - name: 통합 테스트 — 방금 만든 이미지로 6개 서비스 배포
+        run: |
+          kind load docker-image ${{ env.SERVICE }}:ci --name ci
+          cd deploy/overlays/dev
+          kustomize edit set image ${{ env.K8S_NAME }}=${{ env.SERVICE }}:ci
+          kubectl create namespace shop-dev
+          kubectl apply -k .
+          kubectl -n shop-dev wait --for=condition=available deploy --all --timeout=180s
+          # 통과했다고 새 이미지가 쓰인 것은 아니다 — 실제로 배포된 이미지를 확인한다
+          kubectl -n shop-dev get deploy ${{ env.K8S_NAME }} -o jsonpath='{.spec.template.spec.containers[0].image}' | tee /dev/stderr | grep -qx "${{ env.SERVICE }}:ci"
+
+      - name: 통합 테스트 — 장바구니 화면(배송비 계산에 shipping 사용)
+        run: |
+          kubectl -n shop-dev port-forward svc/frontend 8080:80 &
+          sleep 5
+          code=$(curl -s -o /dev/null -w "%{http_code}" localhost:8080/cart)
+          echo "장바구니 응답: $code"
+          test "$code" = 200
+
+      - name: 실패하면 상태 남기기
+        if: failure()
+        run: |
+          kubectl -n shop-dev get pods -o wide || true
+          kubectl -n shop-dev describe pods 2>/dev/null | tail -40 || true
+
   push:
     needs: verify
     if: github.ref == 'refs/heads/main'
