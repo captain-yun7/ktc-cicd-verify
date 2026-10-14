@@ -44,7 +44,7 @@ jobs:
           version: ${{ env.TRIVY_VERSION }}
           cache: true
       - name: Trivy 게이트 (고칠 수 있는 CRITICAL이 있으면 실패)
-        run: trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ${{ env.APP }}:ci
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed ${{ env.APP }}:ci
 
   push:
     needs: scan
