@@ -1,0 +1,8 @@
+# todo 앱 묶음: db · api · web (Kubernetes 실습 7·8, 클라우드 보안 todo.yaml을 나눈 것)
+# 네임스페이스와 이미지 주소·태그는 overlays/<환경>에서 정한다
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- db.yaml
+- api.yaml
+- web.yaml
