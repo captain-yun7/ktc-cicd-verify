@@ -16,7 +16,7 @@ pool.on('error', (err) => console.log(`database connection lost: ${err.message}`
 const app = express();
 app.use(express.json());
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/health', (req, res) => res.json({ ok: true, version: 2 }));
 
 app.get('/api/todos', async (req, res) => {
   const { rows } = await pool.query('SELECT id, title FROM todos ORDER BY id');
