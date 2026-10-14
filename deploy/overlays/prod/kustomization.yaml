@@ -11,4 +11,4 @@ images:
   newTag: jenkins-2
 - name: todo-web
   newName: ghcr.io/captain-yun7/ktc-cicd-verify/web
-  newTag: 7a4226b90383ca1c263bbd81b648df42028d99c5
+  newTag: aa15df09a67c779203022da853b50bab2907cc8b
