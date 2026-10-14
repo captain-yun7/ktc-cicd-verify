@@ -1,0 +1,14 @@
+# prod 환경 — 네임스페이스 todo-prod. dev에서 확인한 태그를 PR로 이 파일에 옮겨 적고, Argo CD에서 Sync를 눌러 배포한다 (미션 2)
+# newName의 아이디 자리는 실습 2 7단계에서 내 GitHub 아이디(소문자)로 바꾼다
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: todo-prod
+resources:
+- ../../base
+images:
+- name: todo-api
+  newName: ghcr.io/<아이디>/cicd-lab/api
+  newTag: main
+- name: todo-web
+  newName: ghcr.io/<아이디>/cicd-lab/web
+  newTag: main
