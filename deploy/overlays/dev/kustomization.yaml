@@ -8,7 +8,7 @@ resources:
 images:
 - name: todo-api
   newName: ghcr.io/captain-yun7/ktc-cicd-verify/api
-  newTag: jenkins-2
+  newTag: jenkins-4
 - name: todo-web
   newName: ghcr.io/captain-yun7/ktc-cicd-verify/web
   newTag: main
