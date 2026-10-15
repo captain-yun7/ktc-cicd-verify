@@ -68,3 +68,21 @@ jobs:
           tags: |
             ${{ steps.img.outputs.name }}:${{ github.sha }}
             ${{ steps.img.outputs.name }}:main
+
+  deploy-dev:
+    needs: push
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write          # 매니페스트 커밋을 push 하려면 필요
+    steps:
+      - uses: actions/checkout@v7
+      - name: dev 매니페스트에 새 이미지 태그 기록
+        run: |
+          cd deploy/overlays/dev
+          kustomize edit set image todo-web=ghcr.io/${GITHUB_REPOSITORY,,}/web:${GITHUB_SHA}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy(dev): web ${GITHUB_SHA::7}"
+          git pull --rebase
+          git push
+          # GITHUB_TOKEN으로 만든 커밋은 워크플로를 다시 실행하지 않는다 → 끝없이 돌지 않음
