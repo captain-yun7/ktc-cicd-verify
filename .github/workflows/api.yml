@@ -6,42 +6,66 @@ on:
     paths:
       - "api/**"
       - ".github/workflows/api.yml"
+  pull_request:
+    paths:
+      - "api/**"
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write          # GHCR에 올리려면 필요
+  packages: write
+
+env:
+  APP: api                 # 폴더 이름 = 이미지 이름 (미션 1에서는 web)
+  TRIVY_VERSION: v0.74.0
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-
       - name: 테스트
-        working-directory: api
+        working-directory: ${{ env.APP }}
         run: |
           npm ci
           npm test
 
+  scan:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: 이미지 빌드 (검사용)
+        run: docker build -t ${{ env.APP }}:ci ${{ env.APP }}
+      # 남이 만든 Action은 태그 대신 커밋 SHA로 고정한다 (태그는 다른 코드로 옮겨 달 수 있다)
+      - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          cache: true
+      - name: Trivy 게이트 (고칠 수 있는 CRITICAL이 있으면 실패)
+        run: trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ${{ env.APP }}:ci
+
+  push:
+    needs: scan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
       - name: 이미지 이름 (GHCR는 소문자만)
         id: img
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/api" >> "$GITHUB_OUTPUT"
-
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${{ env.APP }}" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: 빌드·올리기
         uses: docker/build-push-action@v7
         with:
-          context: api
+          context: ${{ env.APP }}
           push: true
           tags: |
             ${{ steps.img.outputs.name }}:${{ github.sha }}
